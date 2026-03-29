@@ -55,12 +55,14 @@ A HostBill domain module integrated with **HiTechCloud User API**, based on the 
 - Contact information:
   - `getContactInfo()`
   - `updateContactInfo()`
+  - best-effort normalizes common contact fields such as name, email, address, phone, and company
 - Registry auto-renew:
   - `getRegistryAutorenew()`
   - `updateRegistryAutorenew()`
 - Email forwarding:
   - `getEmailForwarding()`
   - `updateEmailForwarding()`
+  - additionally normalizes common keys such as `from`, `to`, and `forwardings`
 - DNS management:
   - `getDNSmanagement()`
   - `updateDNSManagement()`
@@ -78,6 +80,7 @@ A HostBill domain module integrated with **HiTechCloud User API**, based on the 
   - additionally returns `supports_register`, `supports_transfer`, and `supports_renew` flags
 - Connection test:
   - `testConnection()`
+  - logs successful diagnostics with `auth_mode` and detected domain count when available
 
 ## Main File
 

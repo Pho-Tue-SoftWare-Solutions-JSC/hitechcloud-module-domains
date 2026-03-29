@@ -3,7 +3,7 @@
 class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface, DomainWhoisInterface, DomainBulkLookupInterface, DomainSuggestionsInterface, DomainHideFormInterface, DomainPremiumInterface, DomainModuleNameservers, DomainModuleGluerecords, DomainModuleAuth, DomainModuleLock, DomainModulePrivacy, DomainModuleContacts, DomainModuleRegistryAutorenew, DomainModuleForwarding, DomainModuleDNS, DomainModuleDNSSEC, DomainModuleListing, DomainPriceImport
 {
     protected $moduleName = 'HiTechCloud_Domains';
-    protected $version = '1.6.3';
+    protected $version = '1.6.4';
     protected $description = 'HiTechCloud domain integration for HostBill based on available User API endpoints.';
     protected $configuration = [
         'API URL' => [
@@ -414,7 +414,7 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
 
         $cached = $this->getDomainDetailValue($domainId, 'contact_info');
         if (is_array($cached) && isset($cached['contact_info']) && is_array($cached['contact_info'])) {
-            return $cached['contact_info'];
+            return $this->normalizeContactInfo($cached['contact_info']);
         }
 
         $response = $this->request('GET', '/domain/'.$domainId.'/contact');
@@ -423,16 +423,16 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
         }
 
         if (isset($response['contact_info']) && is_array($response['contact_info'])) {
-            return $response['contact_info'];
+            return $this->normalizeContactInfo($response['contact_info']);
         }
 
         foreach (['contacts', 'contact', 'details'] as $key) {
             if (isset($response[$key]) && is_array($response[$key])) {
-                return $response[$key];
+                return $this->normalizeContactInfo($response[$key]);
             }
         }
 
-        return is_array($response) ? $response : false;
+        return is_array($response) ? $this->normalizeContactInfo($response) : false;
     }
 
     public function updateContactInfo()
@@ -504,7 +504,12 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
             return false;
         }
 
-        return $this->request('GET', '/domain/'.$domainId.'/emforwarding');
+        $response = $this->request('GET', '/domain/'.$domainId.'/emforwarding');
+        if ($response === false) {
+            return false;
+        }
+
+        return $this->normalizeEmailForwarding($response);
     }
 
     public function updateEmailForwarding()
@@ -632,6 +637,14 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
     public function testConnection()
     {
         $response = $this->request('GET', '/domain', [], [], true);
+
+        if (false !== $response) {
+            $this->logModuleAction('Test API connection', true, [
+                ['name' => 'api_url', 'from' => '', 'to' => rtrim((string) $this->config('API URL'), '/')],
+                ['name' => 'auth_mode', 'from' => '', 'to' => $this->detectAuthMode()],
+                ['name' => 'domains_detected', 'from' => '', 'to' => (string) $this->countListedDomains($response)],
+            ]);
+        }
 
         return false !== $response;
     }
@@ -1379,6 +1392,92 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
         return $result;
     }
 
+    protected function normalizeContactInfo(array $contacts)
+    {
+        $normalized = [];
+
+        foreach (['registrant', 'admin', 'tech', 'billing'] as $type) {
+            if (isset($contacts[$type]) && is_array($contacts[$type])) {
+                $normalized[$type] = $this->normalizeContactParty($contacts[$type]);
+            }
+        }
+
+        if (!empty($normalized)) {
+            return $normalized;
+        }
+
+        if (isset($contacts[0]) && is_array($contacts[0])) {
+            foreach ($contacts as $index => $contact) {
+                if (!is_array($contact)) {
+                    continue;
+                }
+
+                $normalized[(string) $index] = $this->normalizeContactParty($contact);
+            }
+
+            return $normalized;
+        }
+
+        return $this->normalizeContactParty($contacts);
+    }
+
+    protected function normalizeContactParty(array $contact)
+    {
+        $normalized = $contact;
+        $mapping = [
+            'id' => ['id', 'contact_id'],
+            'firstname' => ['firstname', 'first_name', 'fname'],
+            'lastname' => ['lastname', 'last_name', 'lname'],
+            'fullname' => ['fullname', 'full_name', 'name'],
+            'companyname' => ['companyname', 'company', 'organization'],
+            'email' => ['email', 'email_address'],
+            'address1' => ['address1', 'address', 'street'],
+            'address2' => ['address2', 'street2'],
+            'city' => ['city', 'town'],
+            'state' => ['state', 'province', 'region'],
+            'postcode' => ['postcode', 'postalcode', 'zip'],
+            'country' => ['country', 'country_code'],
+            'phone' => ['phone', 'phone_number', 'phonenumber'],
+        ];
+
+        foreach ($mapping as $target => $sources) {
+            if (isset($normalized[$target]) && $normalized[$target] !== '') {
+                continue;
+            }
+
+            $value = $this->extractFirstValue($contact, $sources);
+            if (null !== $value && $value !== '') {
+                $normalized[$target] = $value;
+            }
+        }
+
+        return $normalized;
+    }
+
+    protected function normalizeEmailForwarding($response)
+    {
+        if (!is_array($response)) {
+            return $response;
+        }
+
+        $normalized = $response;
+        $from = $this->extractFirstValue($response, ['from', 'source', 'alias', 'username']);
+        $to = $this->extractFirstValue($response, ['to', 'destination', 'target', 'email']);
+        $items = $this->extractFirstValue($response, ['forwardings', 'forwards', 'items', 'data']);
+
+        if (null !== $from && !isset($normalized['from'])) {
+            $normalized['from'] = $from;
+        }
+        if (null !== $to && !isset($normalized['to'])) {
+            $normalized['to'] = $to;
+        }
+        if (is_array($items) && !isset($normalized['forwardings'])) {
+            $normalized['forwardings'] = $items;
+        }
+
+        return $normalized;
+    }
+
     protected function normalizePriceValue($value)
     {
         if (null === $value || $value === '') {
@@ -1400,6 +1499,42 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
         sort($periods, SORT_NUMERIC);
 
         return array_map('strval', $periods);
+    }
+
+    protected function countListedDomains($response)
+    {
+        if (!is_array($response)) {
+            return 0;
+        }
+
+        foreach (['domains', 'items', 'data', 'details'] as $key) {
+            if (isset($response[$key]) && is_array($response[$key])) {
+                return count($response[$key]);
+            }
+        }
+
+        return isset($response[0]) && is_array($response[0]) ? count($response) : 0;
+    }
+
+    protected function detectAuthMode()
+    {
+        if (trim((string) $this->config('Access Token')) !== '') {
+            return 'access_token';
+        }
+
+        if (!empty($this->tokenCache['access_token'])) {
+            return !empty($this->tokenCache['refresh_token']) ? 'refresh_token' : 'runtime_token';
+        }
+
+        if (trim((string) $this->config('Refresh Token')) !== '') {
+            return 'refresh_token';
+        }
+
+        if (trim((string) $this->config('Username')) !== '' && (string) $this->config('Password') !== '') {
+            return 'username_password';
+        }
+
+        return 'anonymous';
     }
 
     protected function getAvailableTldsData()

@@ -119,6 +119,7 @@ Tài liệu mapping giữa method trong module `HiTechCloud_Domains` và các en
 ### `getContactInfo()`
 - ưu tiên cache/details nếu có
 - endpoint fallback: `GET /domain/:id/contact`
+- normalize best-effort các field contact thường gặp như `first_name`, `last_name`, `company`, `postalcode`, `phone_number`
 
 ### `updateContactInfo()`
 - endpoint: `PUT /domain/:id/contact`
@@ -138,6 +139,7 @@ Tài liệu mapping giữa method trong module `HiTechCloud_Domains` và các en
 
 ### `getEmailForwarding()`
 - endpoint: `GET /domain/:id/emforwarding`
+- normalize thêm các key thường gặp như `source|alias|username`, `destination|target|email`, `forwardings|forwards|items|data`
 
 ### `updateEmailForwarding()`
 - endpoint: `PUT /domain/:id/emforwarding`
@@ -176,6 +178,7 @@ Tài liệu mapping giữa method trong module `HiTechCloud_Domains` và các en
 
 ### `testConnection()`
 - endpoint: `GET /domain`
+- log thêm chẩn đoán thành công theo `auth_mode` và số lượng domain nếu response có list
 
 ## 13. Cache behavior
 

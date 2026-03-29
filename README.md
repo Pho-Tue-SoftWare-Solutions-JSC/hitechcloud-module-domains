@@ -54,12 +54,14 @@ Module domain cho HostBill, tích hợp với **HiTechCloud User API** dựa tr�
 - Contact info:
   - `getContactInfo()`
   - `updateContactInfo()`
+  - normalize best-effort các field contact phổ biến như tên, email, địa chỉ, phone, company
 - Registry auto renew:
   - `getRegistryAutorenew()`
   - `updateRegistryAutorenew()`
 - Email forwarding:
   - `getEmailForwarding()`
   - `updateEmailForwarding()`
+  - normalize thêm các key phổ biến như `from`, `to`, `forwardings`
 - DNS records:
   - `getDNSmanagement()`
   - `updateDNSManagement()`
@@ -77,6 +79,7 @@ Module domain cho HostBill, tích hợp với **HiTechCloud User API** dựa tr�
   - trả thêm cờ hỗ trợ `supports_register`, `supports_transfer`, `supports_renew`
 - Test kết nối:
   - `testConnection()`
+  - ghi log chẩn đoán thành công với `auth_mode` và số domain đọc được nếu có
 
 ## File chính
 

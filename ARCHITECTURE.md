@@ -96,9 +96,9 @@ Bao gồm:
 - EPP code
 - registrar lock
 - ID protection
-- contacts
+- contacts normalization
 - registry auto renew
-- email forwarding
+- email forwarding normalization
 - DNS
 - DNSSEC
 - domain listing normalization
@@ -219,6 +219,13 @@ Chiến lược hiện tại:
   - `msg`
   - `detail`
   - `description`
+
+## 10.1 Response normalization
+
+Ngoài normalize cho pricing và list domains, module hiện còn chuẩn hóa best-effort cho:
+- contact info: gom các field thường gặp về key HostBill-friendly như `firstname`, `lastname`, `companyname`, `postcode`, `phone`
+- email forwarding: gom các field thường gặp về `from`, `to`, `forwardings`
+- connection diagnostics: `testConnection()` ghi log mode xác thực và số lượng domain đọc được nếu có
 
 ## 10. DNS và DNSSEC
 

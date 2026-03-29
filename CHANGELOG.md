@@ -2,6 +2,18 @@
 
 All notable changes to this module should be documented in this file.
 
+## [1.6.4] - 2026-03-29
+
+### Added
+- Added best-effort normalization for contact responses across common alternate field names
+- Added best-effort normalization for email forwarding responses across common alternate field names
+- Added richer `testConnection()` success logging with detected auth mode and domain count summary
+
+### Changed
+- Improved `getContactInfo()` to return more consistent HostBill-friendly contact structures
+- Improved `getEmailForwarding()` to normalize `from`, `to`, and forwarding list fields when available
+- Updated module version from `1.6.3` to `1.6.4`
+
 ## [1.6.3] - 2026-03-29
 
 ### Added

@@ -163,6 +163,24 @@ Module sẽ thử đọc một trong các key sau từ response:
 ### Get
 - `GET /domain/:id/contact`
 
+### Example normalized result
+```php
+[
+    'registrant' => [
+        'firstname' => 'John',
+        'lastname' => 'Doe',
+        'email' => 'john@example.com',
+        'companyname' => 'Example Ltd',
+        'phone' => '+84900000000',
+        'address1' => '123 Street',
+        'city' => 'HCMC',
+        'state' => 'HCM',
+        'postcode' => '700000',
+        'country' => 'VN',
+    ],
+]
+```
+
 ### Update
 - `PUT /domain/:id/contact`
 
@@ -190,6 +208,20 @@ Module sẽ thử đọc một trong các key sau từ response:
 
 ### Get
 - `GET /domain/:id/emforwarding`
+
+### Example normalized result
+```php
+[
+    'from' => 'info',
+    'to' => 'admin@example.com',
+    'forwardings' => [
+        [
+            'from' => 'sales',
+            'to' => 'sales@example.com',
+        ],
+    ],
+]
+```
 
 ### Update
 - `PUT /domain/:id/emforwarding`
