@@ -50,6 +50,8 @@ Tài liệu mapping giữa method trong module `HiTechCloud_Domains` và các en
 ### `suggestDomains($sld, $tld)`
 - không gọi API riêng
 - sinh suggestion nội bộ theo danh sách TLD mặc định
+- ưu tiên TLD được yêu cầu
+- có thể mở rộng danh sách suggestion từ dữ liệu `GET /domain/order` đã cache
 
 ### `whoisDomain($sld, $tld)`
 - ưu tiên: `GET /whoislookup/:domain`
@@ -59,6 +61,7 @@ Tài liệu mapping giữa method trong module `HiTechCloud_Domains` và các en
 
 ### `ListDomains()`
 - endpoint: `GET /domain`
+- normalize best-effort các key thường gặp như `name|domain|fqdn`, `status|domainstatus|state`, `expires|expiry|expiration|expire_date|next_due`, `autorenew|auto_renew`
 
 ### `resolveRemoteDomainId()`
 - ưu tiên dữ liệu local/extended

@@ -3,7 +3,7 @@
 class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface, DomainWhoisInterface, DomainBulkLookupInterface, DomainSuggestionsInterface, DomainHideFormInterface, DomainPremiumInterface, DomainModuleNameservers, DomainModuleGluerecords, DomainModuleAuth, DomainModuleLock, DomainModulePrivacy, DomainModuleContacts, DomainModuleRegistryAutorenew, DomainModuleForwarding, DomainModuleDNS, DomainModuleDNSSEC, DomainModuleListing, DomainPriceImport
 {
     protected $moduleName = 'HiTechCloud_Domains';
-    protected $version = '1.6.2';
+    protected $version = '1.6.3';
     protected $description = 'HiTechCloud domain integration for HostBill based on available User API endpoints.';
     protected $configuration = [
         'API URL' => [
@@ -201,7 +201,9 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
         $suggestions = [];
         $prefix = preg_replace('/[^a-z0-9\-]/i', '', (string) $sld);
         $baseTld = ltrim((string) $tld, '.');
-        foreach (['com', 'net', 'org', 'vn', $baseTld] as $candidateTld) {
+        $limit = isset($settings['limit']) ? max(1, (int) $settings['limit']) : 10;
+
+        foreach ($this->getSuggestionTlds($baseTld, $limit) as $candidateTld) {
             if (!$candidateTld) {
                 continue;
             }
@@ -606,8 +608,12 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
 
         foreach (['domains', 'items', 'data', 'details'] as $key) {
             if (isset($response[$key]) && is_array($response[$key])) {
-                return $response[$key];
+                return $this->normalizeDomainList($response[$key]);
             }
+        }
+
+        if (is_array($response) && isset($response[0]) && is_array($response[0])) {
+            return $this->normalizeDomainList($response);
         }
 
         return $response;
@@ -1408,6 +1414,75 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
         }
 
         return $response;
+    }
+
+    protected function getSuggestionTlds($baseTld = '', $limit = 10)
+    {
+        $candidates = [];
+        foreach (['com', 'net', 'org', 'io', 'cloud', 'vn'] as $defaultTld) {
+            $candidates[] = $defaultTld;
+        }
+
+        $availableTlds = $this->getAvailableTldsData();
+        if (is_array($availableTlds)) {
+            foreach (['tlds', 'items', 'data', 'details'] as $key) {
+                if (!empty($availableTlds[$key]) && is_array($availableTlds[$key])) {
+                    $availableTlds = $availableTlds[$key];
+                    break;
+                }
+            }
+
+            foreach ($availableTlds as $tldData) {
+                if (!is_array($tldData) || empty($tldData['tld'])) {
+                    continue;
+                }
+
+                $candidates[] = ltrim((string) $tldData['tld'], '.');
+            }
+        }
+
+        if ($baseTld !== '') {
+            array_unshift($candidates, $baseTld);
+        }
+
+        $candidates = array_values(array_unique(array_filter(array_map(function ($value) {
+            return strtolower(trim((string) $value));
+        }, $candidates))));
+
+        return array_slice($candidates, 0, max(1, (int) $limit));
+    }
+
+    protected function normalizeDomainList(array $domains)
+    {
+        $result = [];
+        foreach ($domains as $domain) {
+            if (!is_array($domain)) {
+                continue;
+            }
+
+            $name = $this->extractFirstValue($domain, ['name', 'domain', 'fqdn']);
+            $status = $this->extractFirstValue($domain, ['status', 'domainstatus', 'state']);
+            $expiry = $this->extractFirstValue($domain, ['expires', 'expiry', 'expiration', 'expire_date', 'next_due']);
+            $autorenew = $this->extractFirstValue($domain, ['autorenew', 'auto_renew']);
+
+            $normalized = $domain;
+            if (null !== $name && !isset($normalized['name'])) {
+                $normalized['name'] = $name;
+            }
+            if (null !== $status && !isset($normalized['status'])) {
+                $normalized['status'] = $status;
+            }
+            if (null !== $expiry && !isset($normalized['expires'])) {
+                $normalized['expires'] = $expiry;
+            }
+            if (null !== $autorenew && !isset($normalized['autorenew'])) {
+                $normalized['autorenew'] = $this->toBoolValue($autorenew);
+            }
+
+            $result[] = $normalized;
+        }
+
+        return $result;
     }
 
     protected function unsupportedGlueRecordsAction($action)

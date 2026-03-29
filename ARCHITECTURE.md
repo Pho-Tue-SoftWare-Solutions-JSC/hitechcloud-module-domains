@@ -87,6 +87,7 @@ Các method:
 Đặc điểm:
 - lookup gọi `POST /domain/lookup`
 - whois ưu tiên `/whoislookup/:domain`, fallback sang `/whois/:domain`
+- `suggestDomains()` không có endpoint riêng nên ghép từ danh sách TLD mặc định và TLD khả dụng đã cache
 
 ### 4.3 Domain management
 Bao gồm:
@@ -100,6 +101,7 @@ Bao gồm:
 - email forwarding
 - DNS
 - DNSSEC
+- domain listing normalization
 - import bảng giá domain
 
 Tất cả đều đi qua lớp request chung.

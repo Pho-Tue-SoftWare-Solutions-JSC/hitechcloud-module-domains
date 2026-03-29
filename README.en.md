@@ -30,6 +30,7 @@ A HostBill domain module integrated with **HiTechCloud User API**, based on the 
 - Domain availability lookup: `lookupDomain()`
 - Bulk lookup: `lookupBulkDomains()`
 - Domain suggestions: `suggestDomains()`
+- `suggestDomains()` prioritizes the requested TLD and can enrich candidates from `GET /domain/order` TLD metadata
 - WHOIS lookup: `whoisDomain()`
 - Best-effort premium domain detection from lookup responses
 
@@ -70,6 +71,7 @@ A HostBill domain module integrated with **HiTechCloud User API**, based on the 
   - `widget_dnssec_set($data)`
 - Domain listing:
   - `ListDomains()`
+  - additionally normalizes common fields such as `name`, `status`, `expires`, and `autorenew` when the API uses alternate keys
 - Domain price import:
   - `getDomainPrices()`
   - additionally returns `available_periods`, `register_periods`, `transfer_periods`, and `renew_periods`
@@ -222,6 +224,7 @@ Best-effort supported fields:
 - Glue record support is still not implemented
 - Price import is currently best-effort from the TLD listing returned by `GET /domain/order`
 - `getDomainPrices()` now also normalizes operation-specific available periods so HostBill can map register/transfer/renew pricing more reliably
+- `suggestDomains()` still does not use a dedicated API endpoint, but now produces better local suggestions from cached available TLD data
 
 ## Suggested Next Improvements
 

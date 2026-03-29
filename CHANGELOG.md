@@ -2,6 +2,17 @@
 
 All notable changes to this module should be documented in this file.
 
+## [1.6.3] - 2026-03-29
+
+### Added
+- Added suggestion TLD generation from cached `GET /domain/order` data with configurable limit support
+- Added best-effort normalization for `ListDomains()` fields such as `name`, `status`, `expires`, and `autorenew`
+
+### Changed
+- Improved `suggestDomains()` to prioritize the requested TLD and enrich candidates from available pricing/TLD metadata
+- Improved `ListDomains()` to return more consistent HostBill-friendly domain rows when the API uses alternate field names
+- Updated module version from `1.6.2` to `1.6.3`
+
 ## [1.6.2] - 2026-03-29
 
 ### Added
