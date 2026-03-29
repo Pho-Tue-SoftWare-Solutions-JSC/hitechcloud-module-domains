@@ -71,7 +71,14 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
 
     public function Register()
     {
-        return $this->createDomainOrder('register');
+        $result = $this->createDomainOrder('register');
+        if ($result) {
+            $this->logModuleAction('Register domain', true, [
+                ['name' => 'domain', 'from' => '', 'to' => (string) $this->name],
+            ]);
+        }
+
+        return $result;
     }
 
     public function Renew()
@@ -96,11 +103,9 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
         }
 
         $this->addPeriod();
-        $this->logAction([
-            'action' => 'Renew domain via HiTechCloud',
-            'result' => true,
-            'change' => [],
-            'error' => false,
+        $this->logModuleAction('Renew domain via HiTechCloud', true, [
+            ['name' => 'domain', 'from' => '', 'to' => (string) $this->name],
+            ['name' => 'years', 'from' => '', 'to' => (string) $query['years']],
         ]);
 
         return true;
@@ -108,7 +113,14 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
 
     public function Transfer()
     {
-        return $this->createDomainOrder('transfer');
+        $result = $this->createDomainOrder('transfer');
+        if ($result) {
+            $this->logModuleAction('Transfer domain', true, [
+                ['name' => 'domain', 'from' => '', 'to' => (string) $this->name],
+            ]);
+        }
+
+        return $result;
     }
 
     public function lookupDomain($sld, $tld, $settings = [])
@@ -321,6 +333,12 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
             return $response['contact_info'];
         }
 
+        foreach (['contacts', 'contact', 'details'] as $key) {
+            if (isset($response[$key]) && is_array($response[$key])) {
+                return $response[$key];
+            }
+        }
+
         return is_array($response) ? $response : false;
     }
 
@@ -425,7 +443,13 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
             return false;
         }
 
-        return isset($response['records']) ? $response['records'] : $response;
+        foreach (['records', 'dns', 'items', 'data'] as $key) {
+            if (isset($response[$key]) && is_array($response[$key])) {
+                return $response[$key];
+            }
+        }
+
+        return $response;
     }
 
     public function updateDNSManagement()
@@ -480,7 +504,13 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
             return false;
         }
 
-        return isset($response['domains']) ? $response['domains'] : $response;
+        foreach (['domains', 'items', 'data', 'details'] as $key) {
+            if (isset($response[$key]) && is_array($response[$key])) {
+                return $response[$key];
+            }
+        }
+
+        return $response;
     }
 
     public function testConnection()
@@ -606,7 +636,13 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
             return false;
         }
 
-        return isset($response['types']) ? $response['types'] : $response;
+        foreach (['types', 'records', 'items', 'data'] as $key) {
+            if (isset($response[$key]) && is_array($response[$key])) {
+                return $response[$key];
+            }
+        }
+
+        return $response;
     }
 
     protected function createDomainOrder($action)
@@ -659,11 +695,10 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
         }
 
         $this->addDomain('Pending Registration');
-        $this->logAction([
-            'action' => ucfirst($action).' domain via HiTechCloud order API',
-            'result' => true,
-            'change' => [],
-            'error' => false,
+        $this->logModuleAction(ucfirst($action).' domain via HiTechCloud order API', true, [
+            ['name' => 'domain', 'from' => '', 'to' => (string) $domainName],
+            ['name' => 'years', 'from' => '', 'to' => (string) $query['years']],
+            ['name' => 'tld_id', 'from' => '', 'to' => (string) $query['tld_id']],
         ]);
 
         return true;
