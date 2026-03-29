@@ -1,4 +1,4 @@
-# HiTechCloud Domains for HostBill
+# HiTechCloud Domains for HostBill.
 
 Module domain cho HostBill, tích hợp với **HiTechCloud User API** dựa trên các endpoint có trong Postman collection được cung cấp.
 
