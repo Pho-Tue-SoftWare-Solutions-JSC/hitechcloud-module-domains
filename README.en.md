@@ -32,6 +32,8 @@ A HostBill domain module integrated with **HiTechCloud User API**, based on the 
 - Domain suggestions: `suggestDomains()`
 - `suggestDomains()` prioritizes the requested TLD and can enrich candidates from `GET /domain/order` TLD metadata
 - WHOIS lookup: `whoisDomain()`
+- `whoisDomain()` now best-effort normalizes common fields such as `domain`, `registrar`, `created_at`, `updated_at`, `expires_at`, `statuses`, `nameservers`, and `contacts`
+- raw WHOIS text responses are also parsed into a more structured shape when possible
 - Best-effort premium domain detection from lookup responses
 
 ### Domain management
@@ -131,6 +133,7 @@ If `Use Bearer Token` is enabled, requests include:
 - `POST /domain/lookup`
 - `GET /whoislookup/:domain`
 - `GET /whois/:domain`
+- WHOIS responses are normalized best-effort from both JSON and raw text payloads
 
 ### Domain management
 - `GET /domain`

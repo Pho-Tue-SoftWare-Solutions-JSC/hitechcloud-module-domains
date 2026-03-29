@@ -45,6 +45,37 @@ Module sẽ gọi lần lượt từng TLD và trả mảng kết quả.
 - `GET /whoislookup/example.com`
 - fallback: `GET /whois/example.com`
 
+### Expected normalized result example
+```php
+[
+    'domain' => 'example.com',
+    'registrar' => 'Example Registrar, Inc.',
+    'created_at' => '2024-01-10T10:20:30Z',
+    'updated_at' => '2025-01-11T11:21:31Z',
+    'expires_at' => '2026-01-10T10:20:30Z',
+    'status' => 'clientTransferProhibited',
+    'statuses' => [
+        'clientTransferProhibited',
+        'clientUpdateProhibited',
+    ],
+    'nameservers' => [
+        'ns1.example.com',
+        'ns2.example.com',
+    ],
+    'raw' => [/* API response */],
+]
+```
+
+### Raw text fallback behavior
+Nếu API chỉ trả WHOIS text, module vẫn cố parse các dòng phổ biến như:
+- `Domain Name:`
+- `Registrar:`
+- `Creation Date:`
+- `Updated Date:`
+- `Registry Expiry Date:`
+- `Domain Status:`
+- `Name Server:`
+
 ## 4. Register domain
 
 ### Input dữ liệu thường dùng

@@ -87,6 +87,7 @@ Các method:
 Đặc điểm:
 - lookup gọi `POST /domain/lookup`
 - whois ưu tiên `/whoislookup/:domain`, fallback sang `/whois/:domain`
+- WHOIS response được normalize best-effort từ cả mảng JSON và raw text line-based response
 - `suggestDomains()` không có endpoint riêng nên ghép từ danh sách TLD mặc định và TLD khả dụng đã cache
 
 ### 4.3 Domain management

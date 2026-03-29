@@ -56,6 +56,8 @@ Tài liệu mapping giữa method trong module `HiTechCloud_Domains` và các en
 ### `whoisDomain($sld, $tld)`
 - ưu tiên: `GET /whoislookup/:domain`
 - fallback: `GET /whois/:domain`
+- normalize best-effort các field WHOIS phổ biến như `domain`, `registrar`, `created_at`, `updated_at`, `expires_at`, `statuses`, `nameservers`, `contacts`
+- nếu API trả raw text WHOIS, module cố gắng parse các dòng phổ biến như `Domain Name`, `Registrar`, `Creation Date`, `Updated Date`, `Expiration Date`, `Domain Status`, `Name Server`
 
 ## 4. Domain information
 

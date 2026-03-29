@@ -3,7 +3,7 @@
 class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface, DomainWhoisInterface, DomainBulkLookupInterface, DomainSuggestionsInterface, DomainHideFormInterface, DomainPremiumInterface, DomainModuleNameservers, DomainModuleGluerecords, DomainModuleAuth, DomainModuleLock, DomainModulePrivacy, DomainModuleContacts, DomainModuleRegistryAutorenew, DomainModuleForwarding, DomainModuleDNS, DomainModuleDNSSEC, DomainModuleListing, DomainPriceImport
 {
     protected $moduleName = 'HiTechCloud_Domains';
-    protected $version = '1.6.6';
+    protected $version = '1.6.7';
     protected $description = 'HiTechCloud domain integration for HostBill based on available User API endpoints.';
     protected $configuration = [
         'API URL' => [
@@ -224,7 +224,7 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
             $response = $this->request('GET', '/whois/'.$this->encodePathSegment($name), [], [], false);
         }
 
-        return $response ?: [];
+        return $this->normalizeWhoisResponse($response, $name);
     }
 
     public function getNameServers()
@@ -1189,6 +1189,272 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
         }
 
         return is_array($response) ? $response : [];
+    }
+
+    protected function normalizeWhoisResponse($response, $domainName = '')
+    {
+        if ($response === false || $response === null || $response === '') {
+            return [];
+        }
+
+        if (is_string($response)) {
+            return $this->normalizeWhoisFromText($response, $domainName);
+        }
+
+        if (!is_array($response)) {
+            return ['domain' => $domainName, 'raw' => $response];
+        }
+
+        $payload = $response;
+        foreach (['whois', 'data', 'details', 'result'] as $key) {
+            if (isset($response[$key])) {
+                if (is_string($response[$key])) {
+                    return $this->mergeWhoisData(
+                        $response,
+                        $this->normalizeWhoisFromText($response[$key], $domainName)
+                    );
+                }
+
+                if (is_array($response[$key])) {
+                    $payload = $response[$key];
+                    break;
+                }
+            }
+        }
+
+        $normalized = $payload;
+        $normalized['domain'] = $this->coalesceFirstValue($payload, [
+            ['domain', 'name', 'fqdn', 'domain_name'],
+            ['domainName', 'domainname'],
+        ], $domainName);
+        $normalized['registrar'] = $this->coalesceFirstValue($payload, [
+            ['registrar'],
+            ['registrar_name'],
+            ['registry', 'registrar'],
+        ]);
+        $normalized['created_at'] = $this->coalesceFirstValue($payload, [
+            ['created_at', 'created', 'creation_date', 'createdate'],
+            ['dates', 'created'],
+            ['registry', 'created'],
+        ]);
+        $normalized['updated_at'] = $this->coalesceFirstValue($payload, [
+            ['updated_at', 'updated', 'updated_date', 'last_updated'],
+            ['dates', 'updated'],
+            ['registry', 'updated'],
+        ]);
+        $normalized['expires_at'] = $this->coalesceFirstValue($payload, [
+            ['expires_at', 'expiry_date', 'expiration_date', 'expires', 'expire_date'],
+            ['dates', 'expires'],
+            ['registry', 'expires'],
+        ]);
+
+        $statuses = $this->normalizeWhoisStatuses($this->coalesceFirstValue($payload, [
+            ['statuses'],
+            ['status'],
+            ['domain_status'],
+            ['registry', 'status'],
+        ]));
+        if (!empty($statuses)) {
+            $normalized['statuses'] = $statuses;
+            if (!isset($normalized['status']) || $normalized['status'] === '') {
+                $normalized['status'] = $statuses[0];
+            }
+        }
+
+        $nameservers = $this->normalizeWhoisNameservers($this->coalesceFirstValue($payload, [
+            ['nameservers'],
+            ['name_servers'],
+            ['nserver'],
+            ['registry', 'nameservers'],
+        ]));
+        if (!empty($nameservers)) {
+            $normalized['nameservers'] = $nameservers;
+        }
+
+        $contacts = $this->normalizeWhoisContacts($payload);
+        if (!empty($contacts)) {
+            $normalized['contacts'] = $contacts;
+        }
+
+        $rawText = $this->coalesceFirstValue($payload, [
+            ['raw'],
+            ['raw_text'],
+            ['text'],
+            ['output'],
+        ]);
+        if (is_string($rawText) && trim($rawText) !== '') {
+            $normalized['raw_text'] = trim($rawText);
+        }
+
+        $normalized['raw'] = $response;
+
+        return $normalized;
+    }
+
+    protected function normalizeWhoisFromText($text, $domainName = '')
+    {
+        $text = trim((string) $text);
+        if ($text === '') {
+            return [];
+        }
+
+        $normalized = [
+            'domain' => $domainName,
+            'statuses' => [],
+            'nameservers' => [],
+            'raw_text' => $text,
+            'raw' => $text,
+        ];
+
+        $linePatterns = [
+            'domain' => '/^Domain Name:\s*(.+)$/mi',
+            'registrar' => '/^Registrar:\s*(.+)$/mi',
+            'created_at' => '/^(?:Creation Date|Created On|Created Date|Registered On):\s*(.+)$/mi',
+            'updated_at' => '/^(?:Updated Date|Last Updated On|Last Modified):\s*(.+)$/mi',
+            'expires_at' => '/^(?:Registry Expiry Date|Registrar Registration Expiration Date|Expiry Date|Expiration Date|Expires On):\s*(.+)$/mi',
+        ];
+
+        foreach ($linePatterns as $field => $pattern) {
+            if (preg_match($pattern, $text, $matches) && !empty($matches[1])) {
+                $normalized[$field] = trim($matches[1]);
+            }
+        }
+
+        if (preg_match_all('/^Domain Status:\s*(.+)$/mi', $text, $matches) && !empty($matches[1])) {
+            $normalized['statuses'] = $this->normalizeWhoisStatuses($matches[1]);
+        }
+
+        if (preg_match_all('/^(?:Name Server|Nameserver):\s*(.+)$/mi', $text, $matches) && !empty($matches[1])) {
+            $normalized['nameservers'] = $this->normalizeWhoisNameservers($matches[1]);
+        }
+
+        if (empty($normalized['domain']) && $domainName !== '') {
+            $normalized['domain'] = $domainName;
+        }
+
+        if (!empty($normalized['statuses'])) {
+            $normalized['status'] = $normalized['statuses'][0];
+        }
+
+        return $normalized;
+    }
+
+    protected function mergeWhoisData(array $base, array $normalized)
+    {
+        foreach ($normalized as $key => $value) {
+            if (!isset($base[$key]) || $base[$key] === '' || $base[$key] === []) {
+                $base[$key] = $value;
+            }
+        }
+
+        $base['raw'] = $base;
+
+        return $base;
+    }
+
+    protected function normalizeWhoisStatuses($statuses)
+    {
+        if (is_string($statuses)) {
+            $statuses = preg_split('/[\r\n,;]+/', $statuses, -1, PREG_SPLIT_NO_EMPTY);
+        }
+
+        if (!is_array($statuses)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($statuses as $status) {
+            if (is_array($status)) {
+                $status = $this->extractFirstValue($status, ['status', 'value', 'name']);
+            }
+
+            $status = trim((string) $status);
+            if ($status === '') {
+                continue;
+            }
+
+            $status = preg_replace('/\s+https?:\/\/\S+$/i', '', $status);
+            $result[] = $status;
+        }
+
+        return array_values(array_unique($result));
+    }
+
+    protected function normalizeWhoisNameservers($nameservers)
+    {
+        if (is_string($nameservers)) {
+            $nameservers = preg_split('/[\r\n,;]+/', $nameservers, -1, PREG_SPLIT_NO_EMPTY);
+        }
+
+        if (!is_array($nameservers)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($nameservers as $nameserver) {
+            if (is_array($nameserver)) {
+                $nameserver = $this->extractFirstValue($nameserver, ['host', 'name', 'nameserver', 'value']);
+            }
+
+            $nameserver = strtolower(trim((string) $nameserver));
+            if ($nameserver === '') {
+                continue;
+            }
+
+            $parts = preg_split('/\s+/', $nameserver);
+            $result[] = $parts[0];
+        }
+
+        return array_values(array_unique($result));
+    }
+
+    protected function normalizeWhoisContacts(array $payload)
+    {
+        $contacts = [];
+        foreach (['registrant', 'admin', 'tech', 'billing'] as $type) {
+            if (isset($payload[$type]) && is_array($payload[$type])) {
+                $contacts[$type] = $this->normalizeContactParty($payload[$type]);
+            }
+        }
+
+        if (!empty($contacts)) {
+            return $contacts;
+        }
+
+        foreach (['contacts', 'contact'] as $key) {
+            if (isset($payload[$key]) && is_array($payload[$key])) {
+                return $this->normalizeContactInfo($payload[$key]);
+            }
+        }
+
+        return [];
+    }
+
+    protected function coalesceFirstValue($response, array $paths, $default = null)
+    {
+        foreach ($paths as $path) {
+            $value = is_array($path)
+                ? $this->extractNestedPathValue($response, $path)
+                : null;
+            if (null !== $value && $value !== '') {
+                return $value;
+            }
+        }
+
+        return $default;
+    }
+
+    protected function extractNestedPathValue($response, array $path)
+    {
+        $value = $response;
+        foreach ($path as $segment) {
+            if (!is_array($value) || !isset($value[$segment])) {
+                return null;
+            }
+            $value = $value[$segment];
+        }
+
+        return $value;
     }
 
     protected function extractFirstValue($response, array $keys)

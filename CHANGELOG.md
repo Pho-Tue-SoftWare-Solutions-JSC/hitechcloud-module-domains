@@ -2,6 +2,16 @@
 
 All notable changes to this module should be documented in this file.
 
+## [1.6.7] - 2026-03-29
+
+### Added
+- Added best-effort WHOIS normalization for common structured fields such as `domain`, `registrar`, `created_at`, `updated_at`, `expires_at`, `statuses`, `nameservers`, and `contacts`
+- Added raw WHOIS text parsing for common line-based responses from `/whoislookup/:domain` and `/whois/:domain`
+
+### Changed
+- Improved `whoisDomain()` to always return a more HostBill-friendly normalized structure when possible
+- Updated module version from `1.6.6` to `1.6.7`
+
 ## [1.6.6] - 2026-03-29
 
 ### Added
