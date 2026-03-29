@@ -288,6 +288,18 @@ Example:
 ]
 ```
 
+Example with alternate input keys accepted by the module:
+```php
+[
+    'id' => '15',
+    'host' => 'mail',
+    'record_type' => 'MX',
+    'target' => 'mail.example.com',
+    'priority' => '10',
+    'ttl' => '3600',
+]
+```
+
 ### Delete record
 - `DELETE /domain/:id/dns/:index?record_id=15`
 

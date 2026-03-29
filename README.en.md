@@ -69,6 +69,7 @@ A HostBill domain module integrated with **HiTechCloud User API**, based on the 
   - `getDNSRecordTypes()`
   - best-effort normalizes common record fields such as `id`, `name`, `type`, `content`, `priority`, and `ttl`
   - record types are normalized into a sorted unique list
+  - `updateDNSManagement()` now better accepts alternate input keys such as `host`, `subdomain`, `record_type`, `target`, `value`, `address`, and `ttl`
 - DNSSEC:
   - `widget_dnssec_form()`
   - `widget_dnssec_get()`

@@ -157,6 +157,7 @@ Tài liệu mapping giữa method trong module `HiTechCloud_Domains` và các en
 - create: `POST /domain/:id/dns`
 - update: `PUT /domain/:id/dns/:index`
 - delete: `DELETE /domain/:id/dns/:index`
+- input `dns_record` được normalize best-effort từ các key như `host`, `subdomain`, `record_type`, `target`, `value`, `address`, `ttl`, `record_id|id|index`
 
 ### `getDNSRecordTypes()`
 - endpoint: `GET /domain/:id/dns/types`

@@ -2,6 +2,16 @@
 
 All notable changes to this module should be documented in this file.
 
+## [1.6.6] - 2026-03-29
+
+### Added
+- Added DNS update payload normalization for alternate input keys such as `host`, `subdomain`, `record_type`, `target`, `value`, `address`, and `ttl`
+
+### Changed
+- Improved `updateDNSManagement()` to normalize incoming `dns_record` data before create/update/delete requests
+- Improved DNS update payload building to include `ttl` and better reuse `record_id|id|index`
+- Updated module version from `1.6.5` to `1.6.6`
+
 ## [1.6.5] - 2026-03-29
 
 ### Added

@@ -236,6 +236,7 @@ Ngoài normalize cho pricing và list domains, module hiện còn chuẩn hóa b
 - delete record
 - get supported record types
 - normalize DNS records và record types theo schema gần với HostBill hơn
+- normalize thêm payload update DNS trước khi gửi sang API để chấp nhận nhiều alias field hơn
 
 ### DNSSEC
 - lấy danh sách keys

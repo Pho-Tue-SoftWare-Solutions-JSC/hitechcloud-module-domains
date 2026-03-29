@@ -3,7 +3,7 @@
 class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface, DomainWhoisInterface, DomainBulkLookupInterface, DomainSuggestionsInterface, DomainHideFormInterface, DomainPremiumInterface, DomainModuleNameservers, DomainModuleGluerecords, DomainModuleAuth, DomainModuleLock, DomainModulePrivacy, DomainModuleContacts, DomainModuleRegistryAutorenew, DomainModuleForwarding, DomainModuleDNS, DomainModuleDNSSEC, DomainModuleListing, DomainPriceImport
 {
     protected $moduleName = 'HiTechCloud_Domains';
-    protected $version = '1.6.5';
+    protected $version = '1.6.6';
     protected $description = 'HiTechCloud domain integration for HostBill based on available User API endpoints.';
     protected $configuration = [
         'API URL' => [
@@ -570,16 +570,13 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
             $record = [];
         }
 
+        $record = $this->normalizeDnsRecord($record);
+
         $index = isset($record['index']) ? $record['index'] : '';
         $recordId = isset($record['record_id']) ? $record['record_id'] : (isset($record['id']) ? $record['id'] : '');
         $method = 'POST';
         $path = '/domain/'.$domainId.'/dns';
-        $query = [
-            'name' => isset($record['name']) ? $record['name'] : '',
-            'type' => isset($record['type']) ? $record['type'] : '',
-            'priority' => isset($record['priority']) ? $record['priority'] : '',
-            'content' => isset($record['content']) ? $record['content'] : '',
-        ];
+        $query = $this->buildDnsRecordPayload($record);
 
         if (!empty($record['delete'])) {
             $method = 'DELETE';
@@ -1386,11 +1383,14 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
         $normalized = $record;
         $mapping = [
             'id' => ['id', 'record_id', 'index'],
+            'record_id' => ['record_id', 'id', 'index'],
+            'index' => ['index', 'record_id', 'id'],
             'name' => ['name', 'host', 'subdomain'],
             'type' => ['type', 'record_type'],
             'content' => ['content', 'value', 'target', 'address', 'data'],
             'priority' => ['priority', 'prio', 'distance'],
             'ttl' => ['ttl'],
+            'delete' => ['delete', 'remove'],
         ];
 
         foreach ($mapping as $target => $sources) {
@@ -1405,6 +1405,54 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
         }
 
         return $normalized;
+    }
+
+    protected function buildDnsRecordPayload(array $record)
+    {
+        $payload = [
+            'name' => isset($record['name']) ? $record['name'] : '',
+            'type' => isset($record['type']) ? $record['type'] : '',
+            'priority' => isset($record['priority']) ? $record['priority'] : '',
+            'content' => isset($record['content']) ? $record['content'] : '',
+        ];
+
+        if (isset($record['ttl']) && $record['ttl'] !== '') {
+            $payload['ttl'] = $record['ttl'];
+        }
+
+        if (!empty($record['record_id'])) {
+            $payload['record_id'] = $record['record_id'];
+        }
+
+        if (!empty($record['id']) && empty($payload['record_id'])) {
+            $payload['record_id'] = $record['id'];
+        }
+
+        if (!empty($record['host']) && empty($payload['name'])) {
+            $payload['name'] = $record['host'];
+        }
+
+        if (!empty($record['subdomain']) && empty($payload['name'])) {
+            $payload['name'] = $record['subdomain'];
+        }
+
+        if (!empty($record['record_type']) && empty($payload['type'])) {
+            $payload['type'] = $record['record_type'];
+        }
+
+        if (!empty($record['target']) && empty($payload['content'])) {
+            $payload['content'] = $record['target'];
+        }
+
+        if (!empty($record['value']) && empty($payload['content'])) {
+            $payload['content'] = $record['value'];
+        }
+
+        if (!empty($record['address']) && empty($payload['content'])) {
+            $payload['content'] = $record['address'];
+        }
+
+        return $payload;
     }
 
     protected function looksLikeDnsRecord(array $record)
