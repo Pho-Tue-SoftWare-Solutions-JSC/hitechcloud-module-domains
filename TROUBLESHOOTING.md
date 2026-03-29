@@ -64,6 +64,10 @@ Tài liệu xử lý sự cố thường gặp cho module `hitechcloud_domains`.
 - HTTP `503`
 - HTTP `504`
 
+### Ghi chú về `Retry-After`
+- Nếu backend trả header `Retry-After`, module sẽ ưu tiên đợi theo giá trị backend yêu cầu
+- Nếu không có `Retry-After`, module dùng `Retry Delay` * số lần thử hiện tại
+
 ## 4. Không resolve được remote domain ID
 
 ### Dấu hiệu

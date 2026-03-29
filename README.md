@@ -84,6 +84,7 @@ Trong file `class.hitechcloud_domains.php`, module hỗ trợ các cấu hình s
 - `Timeout`: timeout request HTTP
 - `Retry Count`: số lần retry thêm cho lỗi tạm thời
 - `Retry Delay`: thời gian chờ giữa các lần retry (ms)
+- Nếu API trả `Retry-After`, module sẽ ưu tiên thời gian này cho các response retryable
 - `Default Payment Method`: bắt buộc khi dùng flow tạo order cho register/transfer/renew
 - `Auto Login`: tự login nếu chưa có token
 
@@ -196,7 +197,8 @@ Các field hỗ trợ best-effort:
 - Chưa có tài liệu endpoint rõ ràng cho **glue records / child nameserver**, nên chưa implement `DomainModuleGluerecords`
 - Chưa có schema response đầy đủ cho DNSSEC trong Postman, nên phần normalize đang ở mức best-effort
 - Chưa có endpoint premium domain riêng trong Postman, nên premium hiện chỉ được detect/mapping theo response lookup nếu backend trả về
-- Retry hiện chỉ áp dụng cho lỗi tạm thời ở request layer như timeout, `429`, `502`, `503`, `504`
+- Retry hiện chỉ áp dụng cho lỗi tạm thời ở request layer như timeout, `408`, `429`, `500`, `502`, `503`, `504`
+- Nếu backend trả header `Retry-After`, module sẽ dùng giá trị đó trước `Retry Delay`
 - `Register()`, `Transfer()`, `Renew()` hiện dựa trên user/order API, chưa chắc tương đương registrar provisioning thực tế
 - `hideContacts()` và `hideNameServers()` đang trả về `false`
 - Chưa hỗ trợ import domain pricing (`DomainPriceImport`)

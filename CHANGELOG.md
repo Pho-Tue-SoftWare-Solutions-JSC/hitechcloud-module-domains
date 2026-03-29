@@ -2,6 +2,14 @@
 
 All notable changes to this module should be documented in this file.
 
+## [1.4.1] - 2026-03-29
+
+### Added
+- Added `Retry-After` header support for retryable HTTP responses
+
+### Changed
+- Retry delay now prefers backend-provided `Retry-After` when available
+
 ## [1.4.0] - 2026-03-29
 
 ### Added

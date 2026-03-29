@@ -128,7 +128,7 @@ Nhiệm vụ:
 - Có retry cấu hình được qua `Retry Count`
 - Có delay giữa các lần retry qua `Retry Delay`
 - Retry áp dụng cho lỗi tạm thời như timeout, `408`, `429`, `500`, `502`, `503`, `504`
-- Chưa parse `Retry-After` header từ backend
+- Có parse `Retry-After` header từ backend và ưu tiên dùng giá trị đó nếu có
 
 ## 6. Authentication layer
 

@@ -876,14 +876,16 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
             $headerSize = (int) curl_getinfo($ch, CURLINFO_HEADER_SIZE);
             curl_close($ch);
 
+            $headerText = substr($raw, 0, $headerSize);
             $body = substr($raw, $headerSize);
             $decoded = json_decode($body, true);
             $response = JSON_ERROR_NONE === json_last_error() ? $decoded : trim($body);
 
             if ($status >= 400) {
                 if ($attempt < $maxAttempts && $this->isRetryableHttpStatus($status)) {
-                    $this->logRetryAttempt($context, $attempt, $maxAttempts, 'HTTP '.$status);
-                    $this->sleepBeforeRetry($attempt);
+                    $retryAfterMs = $this->parseRetryAfterMs($headerText);
+                    $this->logRetryAttempt($context, $attempt, $maxAttempts, 'HTTP '.$status, $retryAfterMs);
+                    $this->sleepBeforeRetry($attempt, $retryAfterMs);
                     continue;
                 }
 
@@ -1247,8 +1249,17 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
         return in_array((int) $status, [408, 429, 500, 502, 503, 504], true);
     }
 
-    protected function sleepBeforeRetry($attempt)
+    protected function sleepBeforeRetry($attempt, $overrideDelayMs = null)
     {
+        if (null !== $overrideDelayMs) {
+            $delayMs = max(0, (int) $overrideDelayMs);
+            if ($delayMs > 0) {
+                usleep($delayMs * 1000);
+            }
+
+            return;
+        }
+
         $baseDelayMs = max(0, (int) $this->config('Retry Delay'));
         if ($baseDelayMs <= 0) {
             return;
@@ -1258,15 +1269,50 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
         usleep($delayMs * 1000);
     }
 
-    protected function logRetryAttempt(array $context, $attempt, $maxAttempts, $reason)
+    protected function logRetryAttempt(array $context, $attempt, $maxAttempts, $reason, $retryAfterMs = null)
     {
-        $this->logModuleAction('API retry attempt', false, [
+        $change = [
             ['name' => 'method', 'from' => '', 'to' => isset($context['method']) ? $context['method'] : ''],
             ['name' => 'path', 'from' => '', 'to' => isset($context['path']) ? $context['path'] : ''],
             ['name' => 'attempt', 'from' => '', 'to' => (string) $attempt],
             ['name' => 'max_attempts', 'from' => '', 'to' => (string) $maxAttempts],
             ['name' => 'reason', 'from' => '', 'to' => (string) $reason],
-        ], false);
+        ];
+
+        if (null !== $retryAfterMs) {
+            $change[] = ['name' => 'retry_after_ms', 'from' => '', 'to' => (string) $retryAfterMs];
+        }
+
+        $this->logModuleAction('API retry attempt', false, $change, false);
+    }
+
+    protected function parseRetryAfterMs($headerText)
+    {
+        if (!is_string($headerText) || trim($headerText) === '') {
+            return null;
+        }
+
+        if (!preg_match('/^Retry-After\s*:\s*(.+)$/im', $headerText, $matches)) {
+            return null;
+        }
+
+        $value = trim($matches[1]);
+        if ($value === '') {
+            return null;
+        }
+
+        if (ctype_digit($value)) {
+            return (int) $value * 1000;
+        }
+
+        $timestamp = strtotime($value);
+        if (false === $timestamp) {
+            return null;
+        }
+
+        $delay = ($timestamp - time()) * 1000;
+
+        return $delay > 0 ? $delay : null;
     }
 
     protected function extractPremiumData($response)
