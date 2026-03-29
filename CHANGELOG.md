@@ -1,0 +1,42 @@
+# Changelog
+
+All notable changes to this module should be documented in this file.
+
+## [1.1.0] - 2026-03-29
+
+### Added
+- Added `DomainModuleDNSSEC` support
+- Added `widget_dnssec_form()`
+- Added `widget_dnssec_get()`
+- Added `widget_dnssec_set($data)`
+- Added `testConnection()`
+- Added `getDNSRecordTypes()`
+- Added direct lookup by `/domain/name/:name` in remote domain ID resolution
+
+### Changed
+- Improved `getIDProtection()` to query the API when possible
+- Improved remote domain ID resolution with additional fallback logic
+- Updated module version from `1.0.0` to `1.1.0`
+
+## [1.0.0] - 2026-03-29
+
+### Added
+- Initial `HiTechCloud_Domains` HostBill module implementation
+- Added support for:
+  - register / renew / transfer
+  - lookup / bulk lookup / suggestions / whois
+  - nameservers
+  - EPP code retrieval
+  - registrar lock
+  - ID protection
+  - contacts
+  - registry auto-renew
+  - email forwarding
+  - DNS management
+  - domain listing
+- Added token-based and login-based authentication flow
+- Added basic API request abstraction using cURL
+
+## Notes
+- Current implementation is best-effort and based on the provided HiTechCloud User API Postman collection
+- Register, transfer, and renew currently rely on order/user endpoints rather than a verified registrar provisioning API
