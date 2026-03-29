@@ -4,6 +4,14 @@ A HostBill domain module integrated with **HiTechCloud User API**, based on the 
 
 > Note: The available API appears to be more of a **user/client-facing API** than a pure registrar backend API. Because of that, some operations such as registration, transfer, and renewal are implemented in a **best-effort** way through order/user endpoints.
 
+## Included Documentation
+
+- `README.md`: Vietnamese documentation
+- `ADMIN-GUIDE.md`: admin configuration guide
+- `DEPLOYMENT-CHECKLIST.md`: deployment checklist
+- `CHANGELOG.md`: change history
+- `LICENSE`: copyright / usage information
+
 ## Supported Features
 
 ### Domain lifecycle
