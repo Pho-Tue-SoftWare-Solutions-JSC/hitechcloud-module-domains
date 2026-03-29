@@ -256,6 +256,16 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
             return false;
         }
 
+        $cached = $this->getDomainDetailValue($domainId, 'reglock');
+        if (is_array($cached) && array_key_exists('reglock', $cached)) {
+            return $this->toBoolValue($cached['reglock']);
+        }
+
+        $cached = $this->getDomainDetailValue($domainId, 'locked');
+        if (is_array($cached) && array_key_exists('locked', $cached)) {
+            return $this->toBoolValue($cached['locked']);
+        }
+
         $response = $this->request('GET', '/domain/'.$domainId.'/reglock');
         if ($response === false) {
             return false;
@@ -277,6 +287,7 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
         ]);
 
         if (false !== $response) {
+            $this->forgetDomainCache($domainId, $this->name);
             $this->logModuleAction('Update registrar lock', true, [
                 ['name' => 'lock', 'from' => '', 'to' => $switch ? 'true' : 'false'],
             ]);
@@ -295,6 +306,9 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
         $domainId = $this->resolveRemoteDomainId();
         if ($domainId) {
             $response = $this->getDomainDetailValue($domainId, 'idprotection');
+            if ($response === null) {
+                $response = $this->getDomainDetailValue($domainId, 'privacy');
+            }
             if ($response === null) {
                 $response = $this->request('GET', '/domain/'.$domainId.'/idprotection');
             }
@@ -319,6 +333,7 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
         ]);
 
         if (false !== $response) {
+            $this->forgetDomainCache($domainId, $this->name);
             $this->logModuleAction('Update ID protection', true, [
                 ['name' => 'idprotection', 'from' => '', 'to' => $switch ? 'true' : 'false'],
             ]);

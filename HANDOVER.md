@@ -15,6 +15,7 @@ Bàn giao mã nguồn, tài liệu, hiện trạng triển khai, giới hạn k�
 - `README.md`
 - `README.en.md`
 - `ADMIN-GUIDE.md`
+- `API-MAPPING.md`
 - `DEPLOYMENT-CHECKLIST.md`
 - `EXAMPLES.md`
 - `ARCHITECTURE.md`
@@ -90,11 +91,12 @@ Module hiện hỗ trợ:
 
 1. `README.md`
 2. `ADMIN-GUIDE.md`
-3. `ARCHITECTURE.md`
-4. `EXAMPLES.md`
-5. `TROUBLESHOOTING.md`
-6. `ROADMAP.md`
-7. `DEPLOYMENT-CHECKLIST.md`
+3. `API-MAPPING.md`
+4. `ARCHITECTURE.md`
+5. `EXAMPLES.md`
+6. `TROUBLESHOOTING.md`
+7. `ROADMAP.md`
+8. `DEPLOYMENT-CHECKLIST.md`
 
 ## 10. Kết luận
 

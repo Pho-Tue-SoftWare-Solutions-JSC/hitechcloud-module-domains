@@ -153,6 +153,7 @@ Nên test theo thứ tự:
 
 - `README.md`: tổng quan tiếng Việt
 - `README.en.md`: tổng quan tiếng Anh
+- `API-MAPPING.md`: mapping method và endpoint API
 - `DEPLOYMENT-CHECKLIST.md`: checklist triển khai
 - `EXAMPLES.md`: ví dụ payload và flow xử lý
 - `ARCHITECTURE.md`: mô tả kiến trúc hiện tại
