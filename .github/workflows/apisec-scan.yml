@@ -1,0 +1,61 @@
+name: apisec-scan
+
+on:
+  workflow_dispatch:
+    inputs:
+      openapi_spec:
+        description: 'Path or URL to the OpenAPI specification'
+        required: false
+        default: ''
+      target_url:
+        description: 'Optional target base URL for the API security scan'
+        required: false
+        default: ''
+  schedule:
+    - cron: '0 3 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  apisec-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve OpenAPI spec
+        id: spec
+        shell: bash
+        run: |
+          set -euo pipefail
+          input_spec='${{ github.event.inputs.openapi_spec }}'
+          if [ -n "$input_spec" ]; then
+            echo "spec=$input_spec" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          for candidate in openapi.yaml openapi.yml openapi.json docs/openapi.yaml docs/openapi.yml docs/openapi.json; do
+            if [ -f "$candidate" ]; then
+              echo "spec=$candidate" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+          echo "No OpenAPI spec found. Skipping scan."
+          echo "skip=true" >> "$GITHUB_OUTPUT"
+
+      - name: Run 42Crunch API Security Audit
+        if: steps.spec.outputs.skip != 'true'
+        uses: 42Crunch/api-security-audit-action@v4
+        with:
+          api-token: ${{ secrets.FORTYTWOCRUNCH_API_TOKEN }}
+          platform-url: ${{ secrets.FORTYTWOCRUNCH_PLATFORM_URL }}
+          audit-upload: false
+          file: ${{ steps.spec.outputs.spec }}
+
+      - name: Upload SARIF if generated
+        if: steps.spec.outputs.skip != 'true'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: report/sarif.json
+        continue-on-error: true

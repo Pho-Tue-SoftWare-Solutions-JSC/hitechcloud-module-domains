@@ -1,0 +1,83 @@
+name: symfony
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  php-quality:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version:
+          - '8.1'
+          - '8.2'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+          tools: composer:v2
+
+      - name: Validate composer files when present
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f composer.json ]; then
+            composer validate --strict
+          else
+            echo "composer.json not found, skipping composer validation"
+          fi
+
+      - name: Install dependencies when present
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f composer.json ]; then
+            composer install --no-interaction --no-progress --prefer-dist
+          else
+            echo "composer.json not found, skipping dependency installation"
+          fi
+
+      - name: Lint PHP syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(find . -type f -name '*.php' -not -path './vendor/*' -not -path './.git/*')
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No PHP files found"
+            exit 0
+          fi
+          for file in "${files[@]}"; do
+            php -l "$file"
+          done
+
+      - name: Run Symfony console checks when present
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f bin/console ]; then
+            php bin/console lint:container
+            php bin/console lint:yaml config --parse-tags
+          else
+            echo "bin/console not found, skipping Symfony console checks"
+          fi
+
+      - name: Run PHPUnit when available
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -x vendor/bin/phpunit ]; then
+            vendor/bin/phpunit
+          else
+            echo "PHPUnit not available, skipping tests"
+          fi

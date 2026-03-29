@@ -1,0 +1,30 @@
+name: black-duck-security-scan-ci
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  black-duck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Black Duck Detect
+        uses: synopsys-sig/detect-action@v0.3.5
+        env:
+          DETECT_PROJECT_NAME: hitechcloud_domains
+          DETECT_PROJECT_VERSION_NAME: ${{ github.ref_name }}
+          DETECT_TOOLS: SIGNATURE_SCAN
+          DETECT_BLACKDUCK_URL: ${{ secrets.BLACKDUCK_URL }}
+          DETECT_BLACKDUCK_API_TOKEN: ${{ secrets.BLACKDUCK_API_TOKEN }}
+          DETECT_SOURCE_PATH: ${{ github.workspace }}
