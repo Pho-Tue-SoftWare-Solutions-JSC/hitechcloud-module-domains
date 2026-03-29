@@ -1,0 +1,222 @@
+# HiTechCloud Domains for HostBill
+
+Module domain cho HostBill, tích hợp với **HiTechCloud User API** dựa trên các endpoint có trong Postman collection được cung cấp.
+
+> Lưu ý: API hiện có dấu hiệu là **User API / client-facing API** của HostBill hơn là registrar backend API thuần. Vì vậy một số chức năng như đăng ký, transfer, renew đang được triển khai theo hướng **best-effort** qua order/user endpoints.
+
+## Tính năng đã hỗ trợ
+
+### Domain lifecycle
+- Đăng ký domain: `Register()`
+- Gia hạn domain: `Renew()`
+- Transfer domain: `Transfer()`
+
+### Domain search
+- Kiểm tra domain: `lookupDomain()`
+- Kiểm tra hàng loạt: `lookupBulkDomains()`
+- Gợi ý domain: `suggestDomains()`
+- WHOIS: `whoisDomain()`
+
+### Domain management
+- Quản lý nameserver:
+  - `getNameServers()`
+  - `updateNameServers()`
+- Lấy EPP/Auth code: `getEppCode()`
+- Registrar lock:
+  - `getRegistrarLock()`
+  - `updateRegistrarLock()`
+- ID Protection / Privacy:
+  - `getIDProtection()`
+  - `updateIDProtection()`
+- Contact info:
+  - `getContactInfo()`
+  - `updateContactInfo()`
+- Registry auto renew:
+  - `getRegistryAutorenew()`
+  - `updateRegistryAutorenew()`
+- Email forwarding:
+  - `getEmailForwarding()`
+  - `updateEmailForwarding()`
+- DNS records:
+  - `getDNSmanagement()`
+  - `updateDNSManagement()`
+  - `getDNSRecordTypes()`
+- DNSSEC:
+  - `widget_dnssec_form()`
+  - `widget_dnssec_get()`
+  - `widget_dnssec_set($data)`
+- Listing domains:
+  - `ListDomains()`
+- Test kết nối:
+  - `testConnection()`
+
+## File chính
+
+- `class.hitechcloud_domains.php`: module chính của HostBill
+
+## Cấu hình module
+
+Trong file `class.hitechcloud_domains.php`, module hỗ trợ các cấu hình sau:
+
+- `API URL`: URL gốc của API, ví dụ `https://api.example.com`
+- `Username`: tài khoản đăng nhập API
+- `Password`: mật khẩu API
+- `Access Token`: token cố định nếu có
+- `Refresh Token`: token làm mới nếu có
+- `Use Bearer Token`: bật/tắt gửi header Bearer token
+- `Verify SSL`: bật/tắt verify SSL
+- `Timeout`: timeout request HTTP
+- `Default Payment Method`: bắt buộc khi dùng flow tạo order cho register/transfer/renew
+- `Auto Login`: tự login nếu chưa có token
+
+## Cách hoạt động xác thực
+
+Module ưu tiên xác thực theo thứ tự:
+1. `Access Token` cấu hình sẵn
+2. `Refresh Token` qua endpoint `/token`
+3. `Username` + `Password` qua endpoint `/login`
+
+Nếu bật `Use Bearer Token`, token sẽ được gửi qua header:
+
+- `Authorization: Bearer <token>`
+
+## Mapping endpoint chính
+
+### Auth
+- `POST /login`
+- `POST /token`
+
+### Lookup / Whois
+- `POST /domain/lookup`
+- `GET /whoislookup/:domain`
+- `GET /whois/:domain`
+
+### Domain management
+- `GET /domain`
+- `GET /domain/:id`
+- `GET /domain/name/:name`
+- `GET/PUT /domain/:id/ns`
+- `GET /domain/:id/epp`
+- `GET/PUT /domain/:id/reglock`
+- `GET/PUT /domain/:id/idprotection`
+- `GET/PUT /domain/:id/contact`
+- `GET/PUT /domain/:id/autorenew`
+- `POST /domain/:id/renew`
+- `GET/PUT /domain/:id/emforwarding`
+
+### DNS
+- `GET /domain/:id/dns`
+- `POST /domain/:id/dns`
+- `PUT /domain/:id/dns/:index`
+- `DELETE /domain/:id/dns/:index`
+- `GET /domain/:id/dns/types`
+
+### DNSSEC
+- `GET /domain/:id/dnssec`
+- `PUT /domain/:id/dnssec`
+- `DELETE /domain/:id/dnssec/:key`
+- `GET /domain/:id/dnssec/flags`
+
+### Order flow
+- `POST /domain/order`
+
+## Cài đặt
+
+1. Đặt thư mục module vào đúng thư mục module domain của HostBill.
+2. Đảm bảo file chính là:
+   - `hitechcloud_domains/class.hitechcloud_domains.php`
+3. Kích hoạt module trong phần quản trị HostBill.
+4. Nhập cấu hình API tương ứng.
+5. Test kết nối trước khi dùng thật.
+
+## Cách dùng cơ bản
+
+### Register / Transfer
+Module tạo order qua endpoint `/domain/order` với các dữ liệu như:
+- tên domain
+- số năm
+- `tld_id`
+- `pay_method`
+- nameserver
+- EPP code với transfer
+- contact IDs nếu có
+
+### Renew
+Gia hạn qua:
+- `POST /domain/:id/renew`
+
+### DNS update
+Module hỗ trợ 3 kiểu thao tác:
+- tạo record mới
+- cập nhật record cũ
+- xóa record
+
+Payload được map từ `dns_record`, ví dụ:
+- `index` hoặc `record_id`
+- `name`
+- `type`
+- `priority`
+- `content`
+- `delete`
+
+### DNSSEC update
+`widget_dnssec_set($data)` hỗ trợ:
+- thêm key với action mặc định `add`
+- xóa key với `action=delete`
+
+Các field hỗ trợ best-effort:
+- `key`
+- `flags`
+- `alg`
+- `digest_type`
+- `digest`
+- `pubkey`
+- `protocol`
+
+## Giới hạn hiện tại
+
+- Chưa có tài liệu endpoint rõ ràng cho **glue records / child nameserver**, nên chưa implement `DomainModuleGluerecords`
+- Chưa có schema response đầy đủ cho DNSSEC trong Postman, nên phần normalize đang ở mức best-effort
+- `Register()`, `Transfer()`, `Renew()` hiện dựa trên user/order API, chưa chắc tương đương registrar provisioning thực tế
+- `hideContacts()` và `hideNameServers()` đang trả về `false`
+- Chưa hỗ trợ import domain pricing (`DomainPriceImport`)
+- Chưa hỗ trợ premium domains (`DomainPremiumInterface`)
+
+## Gợi ý nâng cấp tiếp theo
+
+- Lưu `remote_domain_id` vào `extended` sau khi resolve thành công
+- Chuẩn hóa response DNS và DNSSEC chi tiết hơn
+- Bổ sung log chi tiết cho từng request/action
+- Hỗ trợ glue records nếu có thêm API docs
+- Thêm xử lý premium domain nếu API hỗ trợ
+
+## Kiểm tra nhanh
+
+Các điểm nên test sau khi cấu hình:
+- lookup domain
+- register domain test
+- transfer với EPP code
+- renew domain
+- nameserver get/update
+- lock on/off
+- privacy on/off
+- contact get/update
+- DNS create/update/delete
+- DNSSEC add/delete/list
+
+## Ghi chú
+
+Nếu HiTechCloud cung cấp thêm registrar API backend chuyên dụng, nên cập nhật lại các hàm:
+- `Register()`
+- `Transfer()`
+- `Renew()`
+
+để chuyển từ order-based flow sang provisioning flow chuẩn registrar.
+
+---
+
+Nếu cần, có thể bổ sung tiếp:
+- README tiếng Anh
+- file changelog
+- hướng dẫn cài trực tiếp theo cấu trúc module HostBill thực tế
+- tài liệu mapping input/output cho từng method
