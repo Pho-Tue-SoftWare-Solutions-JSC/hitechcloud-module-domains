@@ -1,6 +1,49 @@
-Copyright (c) 2026
+HiTechCloud Domains Module License
+Copyright (c) 2026 Pho Tue SoftWare Solutions JSC. All rights reserved.
 
-All rights reserved.
+This software package, including source code, documentation, configuration,
+examples, and related materials (the "Software"), is the proprietary and
+confidential property of Pho Tue SoftWare Solutions JSC.
 
-This project is provided without any express or implied warranty.
-Use, modification, distribution, and commercial deployment should be subject to the owner's approval unless a separate written license is provided.
+1. Ownership
+	Pho Tue SoftWare Solutions JSC retains all rights, title, and interest in
+	and to the Software, including all intellectual property rights.
+
+2. Permitted Use
+	The Software may be used internally by Pho Tue SoftWare Solutions JSC, its
+	authorized employees, contractors, and customers only as part of approved
+	service delivery, deployment, maintenance, or evaluation activities.
+
+3. Restrictions
+	Except with prior written approval from Pho Tue SoftWare Solutions JSC, you
+	may not:
+	- reproduce, sublicense, distribute, publish, sell, or transfer the Software;
+	- disclose the Software to any unauthorized third party;
+	- modify, adapt, decompile, reverse engineer, or create derivative works for
+	  redistribution purposes;
+	- remove or alter copyright, ownership, or confidentiality notices.
+
+4. Client Delivery
+	Delivery of this Software to a client does not transfer ownership. Any client
+	use is limited to the scope defined in the applicable commercial agreement,
+	statement of work, or written approval issued by Pho Tue SoftWare Solutions JSC.
+
+5. Confidentiality
+	The Software may contain confidential implementation details and business
+	logic. Recipients must protect it from unauthorized access, disclosure, and
+	reuse.
+
+6. Warranty Disclaimer
+	The Software is provided "as is", without warranty of any kind, express or
+	implied, including but not limited to warranties of merchantability, fitness
+	for a particular purpose, and non-infringement.
+
+7. Limitation of Liability
+	To the maximum extent permitted by law, Pho Tue SoftWare Solutions JSC shall
+	not be liable for any indirect, incidental, special, consequential, or
+	punitive damages, or any loss of data, revenue, profits, or business arising
+	from the use of or inability to use the Software.
+
+8. Contact
+	For licensing, reuse, distribution, or commercial permission requests, contact
+	Pho Tue SoftWare Solutions JSC through authorized company channels.
