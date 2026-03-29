@@ -43,14 +43,13 @@ Lộ trình đề xuất cho module `hitechcloud_domains`.
 ## Ưu tiên đề xuất
 
 Thứ tự nên làm tiếp:
-1. Lưu persistent `remote_domain_id`
-2. Logging chi tiết request/action
-3. Chuẩn hóa response mapping
-4. Test thực tế toàn bộ flow
-5. Glue records
-6. Price import
-7. Premium domains
-8. Registrar backend provisioning
+1. Logging chi tiết request/action
+2. Chuẩn hóa response mapping
+3. Test thực tế toàn bộ flow
+4. Glue records
+5. Price import
+6. Premium domains nâng cao / pricing chính xác
+7. Registrar backend provisioning
 
 ## Điều kiện để mở rộng nhanh hơn
 

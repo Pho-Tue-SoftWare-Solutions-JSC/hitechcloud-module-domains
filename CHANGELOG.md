@@ -2,6 +2,17 @@
 
 All notable changes to this module should be documented in this file.
 
+## [1.3.0] - 2026-03-29
+
+### Added
+- Added best-effort `DomainPremiumInterface` support
+- Added premium domain detection from lookup responses
+- Added premium order field mapping for `premium`, `premium_price`, and `currency`
+
+### Changed
+- Updated module version from `1.2.0` to `1.3.0`
+- Clarified current lack of glue-record and dedicated premium endpoints in documentation
+
 ## [1.2.0] - 2026-03-29
 
 ### Added

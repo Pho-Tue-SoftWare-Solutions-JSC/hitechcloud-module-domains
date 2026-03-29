@@ -31,6 +31,7 @@ A HostBill domain module integrated with **HiTechCloud User API**, based on the 
 - Bulk lookup: `lookupBulkDomains()`
 - Domain suggestions: `suggestDomains()`
 - WHOIS lookup: `whoisDomain()`
+- Best-effort premium domain detection from lookup responses
 
 ### Domain management
 - Nameservers:
@@ -193,10 +194,11 @@ Best-effort supported fields:
 
 - No clear glue record / child nameserver endpoints were found in the provided API docs, so `DomainModuleGluerecords` is not implemented yet
 - DNSSEC normalization is best-effort because the Postman collection does not provide a complete response schema
+- No dedicated premium-domain endpoint was found in the Postman collection, so premium support currently depends on lookup response fields if the backend returns them
 - `Register()`, `Transfer()`, and `Renew()` currently rely on user/order API flow rather than confirmed registrar-side provisioning flow
 - `hideContacts()` and `hideNameServers()` currently return `false`
 - Domain price import (`DomainPriceImport`) is not implemented
-- Premium domain support (`DomainPremiumInterface`) is not implemented
+- Glue record support is still not implemented
 
 ## Suggested Next Improvements
 

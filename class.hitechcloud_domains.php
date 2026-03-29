@@ -1,9 +1,9 @@
 <?php
 
-class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface, DomainWhoisInterface, DomainBulkLookupInterface, DomainSuggestionsInterface, DomainHideFormInterface, DomainModuleNameservers, DomainModuleAuth, DomainModuleLock, DomainModulePrivacy, DomainModuleContacts, DomainModuleRegistryAutorenew, DomainModuleForwarding, DomainModuleDNS, DomainModuleDNSSEC, DomainModuleListing
+class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface, DomainWhoisInterface, DomainBulkLookupInterface, DomainSuggestionsInterface, DomainHideFormInterface, DomainPremiumInterface, DomainModuleNameservers, DomainModuleAuth, DomainModuleLock, DomainModulePrivacy, DomainModuleContacts, DomainModuleRegistryAutorenew, DomainModuleForwarding, DomainModuleDNS, DomainModuleDNSSEC, DomainModuleListing
 {
     protected $moduleName = 'HiTechCloud_Domains';
-    protected $version = '1.2.0';
+    protected $version = '1.3.0';
     protected $description = 'HiTechCloud domain integration for HostBill based on available User API endpoints.';
     protected $configuration = [
         'API URL' => [
@@ -133,15 +133,31 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
         }
 
         $available = $this->isLookupAvailable($response);
+        $premiumData = $this->extractPremiumData($response);
 
-        return [
+        $result = [
             'result' => true,
             'available' => $available,
             'domain' => $name,
-            'premium' => false,
+            'premium' => $premiumData['is_premium'],
             'message' => $available ? 'ok' : 'unavailable',
             'raw' => $response,
         ];
+
+        if (null !== $premiumData['price']) {
+            $result['premium_price'] = $premiumData['price'];
+        }
+
+        if (null !== $premiumData['currency']) {
+            $result['currency'] = $premiumData['currency'];
+        }
+
+        if ($premiumData['is_premium'] && !self::arePremiumDomainsAllowed()) {
+            $result['premium_disabled'] = true;
+            $result['message'] = self::ERR_PREMIUM_DOMAINS_DISABLED;
+        }
+
+        return $result;
     }
 
     public function lookupBulkDomains($sld, $tld)
@@ -688,6 +704,12 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
 
     protected function createDomainOrder($action)
     {
+        $premiumOrder = $this->getPremiumOrderData();
+        if ($premiumOrder['premium'] && !self::arePremiumDomainsAllowed()) {
+            $this->addError(self::ERR_PREMIUM_DOMAINS_DISABLED);
+            return false;
+        }
+
         $payMethod = trim((string) $this->config('Default Payment Method'));
         if ($payMethod === '') {
             $this->addError('Default Payment Method is required for '.$action.' order');
@@ -728,6 +750,16 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
 
         if (!empty($this->options['ext']) && is_array($this->options['ext'])) {
             $query['data'] = json_encode($this->options['ext']);
+        }
+
+        if ($premiumOrder['premium']) {
+            $query['premium'] = 'true';
+            if (null !== $premiumOrder['price']) {
+                $query['premium_price'] = $premiumOrder['price'];
+            }
+            if (null !== $premiumOrder['currency']) {
+                $query['currency'] = $premiumOrder['currency'];
+            }
         }
 
         $response = $this->request('POST', '/domain/order', $query);
@@ -1159,6 +1191,100 @@ class HiTechCloud_Domains extends DomainModule implements DomainLookupInterface,
         }
 
         return isset($response[0]) ? array_values($response) : [$response];
+    }
+
+    protected function extractPremiumData($response)
+    {
+        $result = [
+            'is_premium' => false,
+            'price' => null,
+            'currency' => null,
+        ];
+
+        if (!is_array($response)) {
+            return $result;
+        }
+
+        $premiumValue = $this->extractNestedFirstValue($response, [
+            'premium',
+            'is_premium',
+            'premium_domain',
+            'premiumName',
+        ]);
+        if (null !== $premiumValue) {
+            $result['is_premium'] = $this->toBoolValue($premiumValue);
+        }
+
+        $price = $this->extractNestedFirstValue($response, [
+            'premium_price',
+            'premiumPrice',
+            'price',
+            'registration_price',
+        ]);
+        if (null !== $price && '' !== $price) {
+            $result['price'] = $price;
+            $result['is_premium'] = true;
+        }
+
+        $currency = $this->extractNestedFirstValue($response, [
+            'currency',
+            'currency_code',
+            'currencyCode',
+        ]);
+        if (null !== $currency && '' !== $currency) {
+            $result['currency'] = $currency;
+        }
+
+        return $result;
+    }
+
+    protected function getPremiumOrderData()
+    {
+        $premium = $this->toBoolValue($this->optionsValue('premium', isset($this->details['premium']) ? $this->details['premium'] : false));
+        $price = $this->optionsValue('premium_price', null);
+        $currency = $this->optionsValue('currency', null);
+
+        if (isset($this->details['extended']) && is_array($this->details['extended'])) {
+            if (!$premium && isset($this->details['extended']['premium'])) {
+                $premium = $this->toBoolValue($this->details['extended']['premium']);
+            }
+            if (null === $price && isset($this->details['extended']['premium_price'])) {
+                $price = $this->details['extended']['premium_price'];
+            }
+            if (null === $currency && isset($this->details['extended']['currency'])) {
+                $currency = $this->details['extended']['currency'];
+            }
+        }
+
+        return [
+            'premium' => $premium,
+            'price' => $price,
+            'currency' => $currency,
+        ];
+    }
+
+    protected function extractNestedFirstValue($response, array $keys)
+    {
+        if (!is_array($response)) {
+            return null;
+        }
+
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $response)) {
+                return $response[$key];
+            }
+        }
+
+        foreach ($response as $value) {
+            if (is_array($value)) {
+                $found = $this->extractNestedFirstValue($value, $keys);
+                if (null !== $found) {
+                    return $found;
+                }
+            }
+        }
+
+        return null;
     }
 
     protected function getDomainDetailsByName($name)
